@@ -1,12 +1,12 @@
 # Projeto Logica 2019.1
 
 ### Professor Kyller
-### Tema 4: Sistema controle de entrada e saida de veiculos
-### Grupo 14
+### Tema: (4) Sistema controle de entrada e saida de veiculos
+### Grupo: 14
 ### Integrantes:
-Anne Silva
-Cassio Cordeiro
-Geovane Silva
+Anne Silva\n
+Cassio Cordeiro\n
+Geovane Silva\n
 Walisson Farias
 
 ### Descrição:
