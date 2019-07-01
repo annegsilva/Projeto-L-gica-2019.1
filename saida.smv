@@ -1,0 +1,43 @@
+MODULE main
+VAR
+	status: {aguardando, rua, semaforo1, cancela1, cancela2, semaforo2, estacionamento}
+	pedido: 0 .. 1;
+	s1: 0 .. 1;
+	s2: 0 .. 1;
+	c1: 0 .. 1;
+	c2: 0 .. 1;
+	morador: 0 .. 1;
+	vagasmorador: 0 .. 20;
+	vagasvisita: 0 .. 80;
+
+ASSIGN
+	init(status) := aguardando;
+	init(pedido) := 0;
+	init(s1) := 0;
+	init(s2) := 0;
+	
+	next(status) := case
+		(status = aguardando) & (pedido = 0): semaforo2;
+		(status = semaforo2) & (s2 = 0): semaforo2;
+		(status = semaforo2) & (s2 = 1): cancela2;
+		(status = cancela2) & (pedido = 0) & (c2 = 1): cancela1;
+		(status = cancela1) & (pedido = 0) & (c2 = 1): cancela1;
+		(status = cancela1) & (pedido = 0) & (c2 = 0) & (c1 = 1): rua;
+		TRUE: status
+			esca;
+
+	next(c2) := case
+	(status = cancela2) & (pedido = 0): c2=0;
+	(status = cancela1) & (pedido = 0): c2=0;
+
+	next(c1) := case
+	(status = semaforo2) & (s2 = 1): c1=0;
+	(status = cancela1) & (pedido = 0) & (c2 = 0): c1=1;
+
+	next(vagasmorador) := case
+		(status = rua) & (pedido = 0) & (morador = 1): vagasmorador-1;
+
+	next(vagasvisita) := case
+		(status = rua) & (pedido = 0) & (morador = 0): vagasvisita-1;	
+
+
