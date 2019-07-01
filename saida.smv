@@ -1,55 +1,58 @@
 MODULE main
 
 VAR
+	entrar: boolean;
 	sair: boolean;
 	morador: boolean;
 	vagasmorador: 0 .. 20;
 	vagasvisita: 0 .. 80;
-
-ASSIGN
-	init(sair) := TRUE;
-	init(vagasmorador) := 20;
-	init(vagasvisita) := 80;
-
-MODULE saida(sair,vagasmorador, vagasvisita)
-
-VAR
-	status: {aguardando, rua, semaforo1, cancela1, cancela2, semaforo2, estacionamento};
 	s1: boolean;
 	s2: boolean;
 	c1: boolean;
 	c2: boolean;
 
 ASSIGN
-	init(status) := aguardando;
+	init(entrar) := TRUE;
+	init(sair) := TRUE;
+	init(vagasmorador) := 20;
+	init(vagasvisita) := 80;
 	init(s1) := FALSE;
 	init(s2) := FALSE;
 	init(c1) := FALSE;
 	init(c2) := FALSE;
 	
-	next(status) :=
+
+
+MODULE saida(sair,vagasmorador, vagasvisita, s1, s2, c1, c2)
+
+VAR
+	status: {rua, semaforo1, cancela1, cancela2, semaforo2, estacionamento};
+
+ASSIGN
+	init(status) := semaforo2;
+	
+	next(status) := 
 	case
-		(status=aguardando) & (sair=TRUE): semaforo2;
-		(status=semaforo2) & (s2=FALSE): semaforo2;
-		(status=semaforo2) & (s2=TRUE): cancela2;
+		(status=semaforo2) & (sair=TRUE) & (s2=FALSE): semaforo2;
+		(status=semaforo2) & (sair=TRUE) & (s2=TRUE): cancela2;
 		(status=cancela2) & (sair=TRUE) & (c2=FALSE): cancela2;
 		(status=cancela2) & (sair=TRUE) & (c2=TRUE): cancela1;
 		(status=cancela1) & (sair=TRUE) & (c2=TRUE): cancela1;
 		(status=cancela1) & (sair=TRUE) & (c2=FALSE) & (c1=TRUE): rua;
-		(status=rua): aguardando;
 		TRUE: status;
 	esac;
 	next(c2) :=
 	case
-		(status = cancela2) & (sair=TRUE): c2=FALSE;
-		(status = cancela1) & (sair=TRUE): c2=FALSE;
+		(status = semaforo2) & (s2=FALSE): FALSE;
+		(status = semaforo2) & (s2=TRUE): TRUE;
+		(status = cancela1) & (sair=TRUE): FALSE;
 		TRUE: c2;
 	esac;
 	next(c1) :=
 	case
-		(status = semaforo2) & (s2=TRUE): c1=FALSE;
-		(status = cancela1) & (sair=TRUE) & (c2 = FALSE): c1=TRUE;
-		(status = rua): c1=FALSE;
+		(status = semaforo2) & (s2=TRUE): FALSE;
+		(status = cancela1) & (sair=TRUE) & (c2=FALSE):TRUE;
+		(status = rua): FALSE;
 		TRUE: c1;
 	esac;
 	next(vagasmorador) :=
@@ -62,5 +65,3 @@ ASSIGN
 		(status = rua) & (sair=TRUE) & (morador=FALSE): vagasvisita - 1;
 		TRUE: vagasvisita;
 	esac;
-
-
