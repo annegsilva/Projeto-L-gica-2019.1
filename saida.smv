@@ -39,6 +39,7 @@ ASSIGN
 		(status=cancela2) & (sair=TRUE) & (c2=TRUE): cancela1;
 		(status=cancela1) & (sair=TRUE) & (c2=TRUE): cancela1;
 		(status=cancela1) & (sair=TRUE) & (c2=FALSE) & (c1=TRUE): rua;
+		(status=rua): semaforo2;
 		TRUE: status;
 	esac;
 	next(c2) :=

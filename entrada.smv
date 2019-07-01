@@ -21,7 +21,7 @@ ASSIGN
 	init(c1) := FALSE;
 	init(c2) := FALSE;
 	
-MODULE entrada(permissao, entrar,vagasmorador, vagasvisita, s1, s2, c1, c2)
+MODULE entrada(entrar,vagasmorador, vagasvisita, s1, s2, c1, c2)
 
 VAR
 	status: {rua, semaforo1, cancela1, cancela2, semaforo2, estacionamento};
@@ -37,6 +37,7 @@ ASSIGN
 		(status=cancela1) & (entrar=TRUE) & (c1=TRUE): cancela2;
 		(status=cancela2) & (entrar=TRUE) & (c1=TRUE): cancela2;
 		(status=cancela2) & (entrar=TRUE) & (c1=FALSE) & (c2=TRUE): estacionamento;
+		(status=estacionamento) : semaforo1;
 		TRUE: status;
 	esac;
 	next(c1) :=
