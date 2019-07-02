@@ -84,5 +84,7 @@ pred Fatos {
 	all g1:Garagem | all g2:Garagem | !(g1 = g2) => #(g1.vagasVisitantes & g2.vagasVisitantes) = 0
 }
 
+
+
 pred show[]{}
 run Fatos for 30
