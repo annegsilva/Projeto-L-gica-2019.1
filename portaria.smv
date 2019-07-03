@@ -1,20 +1,33 @@
 -- Este arquivo descreve o funcionamento de um estacionamento que
 -- possui apenas uma via para a entrada e saida de carros, cuja
 -- portaria adminitra por meio de dois sinais, o momento em que a
--- passagem está apta para entrada ou para saída.
--- A definicao das variaveis encontra-se a seguir:
--- semaforo1: semaforo que habilita a entrada 
--- semaforo2: semaforo que habilita a saida
----- Verde (livre)      = TRUE
----- Vermelho (ocupado) = FALSE
--- C1: cancela 1
--- c2: cancela 2
----- aberta = TRUE
----- fechada = FALSE
---sentido: indica para qual direcao o carro esta passando
----- entrando = TRUE (1)
----- saindo = FALSE (0)
+-- passagem está apta para entrada ou para saída. A estrutura da
+-- máquina de estados tem como base um semáforo utilizado em sistemas
+-- operacionais para a gerencia de mémoria compartilhada.
+-- A definicao das variaveis utilizadas na FSM encontra-se a seguir.
 
+-- semaforo1 : flag booleana reprensentando o semaforo que habilita a entrada 
+-- semaforo2 : flag booleana reprensentando o semaforo que habilita a saída
+---- Verde    = TRUE
+---- Vermelho = FALSE
+
+-- c1 : cancela 1
+-- c2 : cancela 2
+---- aberta  = TRUE
+---- fechada = FALSE
+
+-- critico : flag booleana que indica se a região critica (passagen) encontra-se ocupada
+---- ocupada = TRUE
+---- livre   = FALSE
+
+-- sentido : o sentindo do fluxo da passagem é indicado pelas variaveis booleanas,
+--           que são utilizadas no fluxo de controle das cancelas.
+---- flag_entrando
+---- flag_saindo
+
+-- vagas: indica o número de carros estacionados na garagem
+
+---------------------------------------------------------------
 
 MODULE main
 
@@ -28,50 +41,61 @@ ASSIGN
   init(semaforo1) := FALSE;
   init(semaforo2) := FALSE;
   
-SPEC(passagem.estado = aguardando -> passagem.critico = FALSE);
-SPEC(passagem.estado = entrando -> passagem.critico = TRUE);
-SPEC(passagem.estado = saindo -> passagem.critico = TRUE);
+-- Especificações sobre o valor de critico: Quando a região crítica estiver ocupada, a flag critica deve ser verdadeira.
+INVARSPEC (passagem.estado = aguardando -> passagem.critico = FALSE);
+INVARSPEC (passagem.estado = entrando -> passagem.critico = TRUE);
+INVARSPEC (passagem.estado = saindo -> passagem.critico = TRUE);
+-- Especificações sobre os valores dos semáforos: Quando ocupado, os semáforos devem ser complementares
 INVARSPEC (semaforo1 = TRUE -> semaforo2 = FALSE);
 INVARSPEC (semaforo2 = TRUE -> semaforo1 = FALSE);
-INVARSPEC (passagem.estado = entrando -> passagem.sentido = TRUE)
-INVARSPEC (passagem.estado = saindo -> passagem.sentido = FALSE)
+-- Especificações sobre as flags de fluxo: Quando ocupado, as flags devem ser complementares
+INVARSPEC (passagem.flag_entrando = TRUE -> passagem.flag_saindo = FALSE)
+INVARSPEC (passagem.flag_saindo = TRUE -> passagem.flag_entrando = FALSE)
+-- Especificações sobre o comportamento das cancelas: Cancelas nunca abrem simultaneamente
+INVARSPEC (passagem.estado = c1_aberta -> passagem.c2 = FALSE)
+INVARSPEC (passagem.estado = c2_aberta -> passagem.c1 = FALSE)
+-- Especificação sobre os valores limites para vagas: Nunca menor que zero e maior que cem.
+INVARSPEC (passagem.vagas >= 0 & passagem.vagas <= 100)
+---------------------------------------------------------------
 
--------------------------------------------------
 MODULE portaria(semaforo1, semaforo2)
 VAR
-  estado : {aguardando, entrando, saindo, c1_aberta, c1_fechada, c2_aberta, c2_fechada, livre};
+  estado : {aguardando, ocupado, entrando, saindo, c1_aberta, c1_fechada, c2_aberta, c2_fechada, livre};
   c1: boolean;
   c2: boolean;
   critico: boolean;
-  sentido: boolean;
+  flag_entrando: boolean;
+  flag_saindo: boolean;
   vagas: 0 .. 100;
 
 ASSIGN
   init(c1) := FALSE;
   init(c2) := FALSE;
   init(critico) := FALSE;
-  init(sentido) := FALSE;
+  init(flag_entrando) := FALSE;
+  init(flag_saindo) := FALSE;
   init(vagas) := 0;
 
   init(estado) := aguardando;
   next(estado) := 
   case 
     -- Muda de estado de forma nao deterministica
-    estado = aguardando : {aguardando, entrando, saindo};
+    estado = aguardando : {aguardando, ocupado};
+    estado = ocupado : {entrando, saindo};
     
     -- Fluxo de entrada
     (estado = entrando) & (semaforo1=TRUE):c1_aberta;
     (estado = c1_aberta) & (c1=FALSE): c1_fechada;
     (estado = c1_fechada) & (c2=TRUE): c2_aberta;
     (estado = c2_aberta) & (c2=FALSE): c2_fechada;
-    (estado = c2_fechada) & (sentido=TRUE): livre;
+    (estado = c2_fechada) & (flag_entrando=TRUE): livre;
 
     -- Fluxo de saida
     (estado = saindo) & (semaforo2=TRUE) & (vagas >= 1): c2_aberta;
     (estado = c2_aberta) & (c2=FALSE):  c2_fechada;
     (estado = c2_fechada) & (c1=TRUE):  c1_aberta;
     (estado = c1_aberta) & (c1=FALSE):  c1_fechada;
-    (estado = c1_fechada) & (sentido=FALSE): livre;
+    (estado = c1_fechada) & (flag_saindo=TRUE): livre;
     
     -- Carro entrou ou saiu com sucesso
     (estado = livre): aguardando;
@@ -115,23 +139,31 @@ ASSIGN
 
   next(critico) :=
     case
-      estado = entrando: TRUE;
-      estado = saindo: TRUE;
-      estado = aguardando: FALSE;
+      estado = ocupado: TRUE;
+      estado = livre: FALSE;
       TRUE : critico;
     esac;
 
-  next(sentido) :=
+  next(flag_entrando) :=
     case
       estado = entrando: TRUE;
       estado = saindo: FALSE;
-      TRUE: sentido;
+      estado = aguardando: FALSE;
+      TRUE: flag_entrando;
+    esac;
+
+  next(flag_saindo) :=
+    case
+      estado = entrando: FALSE;
+      estado = saindo: TRUE;
+      estado = aguardando: FALSE;
+      TRUE: flag_saindo;
     esac;
 
   next(vagas) :=
   case
-    (estado = livre) & (sentido=TRUE) & (vagas < 100) : vagas + 1;
-    (estado = livre) & (sentido=FALSE) & (vagas >= 1): vagas - 1;
+    (estado = livre) & (flag_entrando=TRUE) & (vagas < 100) : vagas + 1;
+    (estado = livre) & (flag_saindo=TRUE) & (vagas >= 1): vagas - 1;
     TRUE: vagas;
   esac;
 
