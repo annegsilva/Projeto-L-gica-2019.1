@@ -151,4 +151,14 @@ assert VeiculoNaoEhVisitanteEDeMorador {
 }
 
 check TodoSemaforoTaEmUmPortao for 30
+assert MoradorTemAteDoisVeiculos{
+	all m: Morador | #proprietario.m <= 2
+}
+
+assert VisitanteTemApenasUmCarro{
+	all v: Visitante | #proprietario.v= 1
+}
+
+
+check MoradorTemAteDoisVeiculos for 30
 run show{}
