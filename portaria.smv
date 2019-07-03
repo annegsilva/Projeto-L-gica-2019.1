@@ -1,0 +1,134 @@
+-- Este arquivo descreve o funcionamento de um estacionamento que
+-- possui apenas uma via para a entrada e saida de carros, cuja
+-- portaria adminitra por meio de dois sinais, o momento em que a
+-- passagem está apta para entrada ou para saída.
+-- A definicao das variaveis encontra-se a seguir:
+-- semaforo1: semaforo que habilita a entrada 
+-- semaforo2: semaforo que habilita a saida
+---- Verde (livre)      = TRUE
+---- Vermelho (ocupado) = FALSE
+-- C1: cancela 1
+-- c2: cancela 2
+---- aberta = TRUE
+---- fechada = FALSE
+--sentido: indica para qual direcao o carro esta passando
+---- entrando = TRUE (1)
+---- saindo = FALSE (0)
+
+
+MODULE main
+
+VAR
+  semaforo1 : boolean;
+  semaforo2 : boolean;
+  passagem : process portaria(semaforo1, semaforo2);
+
+ASSIGN
+-- Ambos os semaforos iniciam como VERMELHO (fechados)
+  init(semaforo1) := FALSE;
+  init(semaforo2) := FALSE;
+  
+SPEC
+  AG (passagem.estado = aguardando -> AF passagem.critico = FALSE)
+
+-------------------------------------------------
+MODULE portaria(semaforo1, semaforo2)
+VAR
+  estado : {aguardando, entrando, saindo, c1_aberta, c1_fechada, c2_aberta, c2_fechada, livre};
+  c1: boolean;
+  c2: boolean;
+  critico: boolean;
+  sentido: boolean;
+  vagas: 0 .. 100;
+
+ASSIGN
+  init(c1) := FALSE;
+  init(c2) := FALSE;
+  init(critico) := FALSE;
+  init(sentido) := FALSE;
+  init(vagas) := 0;
+
+  init(estado) := aguardando;
+  next(estado) := 
+  case 
+    -- Muda de estado de forma nao deterministica
+    estado = aguardando : {aguardando, entrando, saindo};
+    
+    -- Fluxo de entrada
+    (estado = entrando) & (semaforo1=TRUE):c1_aberta;
+    (estado = c1_aberta) & (c1=FALSE): c1_fechada;
+    (estado = c1_fechada) & (c2=TRUE): c2_aberta;
+    (estado = c2_aberta) & (c2=FALSE): c2_fechada;
+    (estado = c2_fechada) & (sentido=TRUE): livre;
+
+    -- Fluxo de saida
+    (estado = saindo) & (semaforo2=TRUE) & (vagas >= 1): c2_aberta;
+    (estado = c2_aberta) & (c2=FALSE):  c2_fechada;
+    (estado = c2_fechada) & (c1=TRUE):  c1_aberta;
+    (estado = c1_aberta) & (c1=FALSE):  c1_fechada;
+    (estado = c1_fechada) & (sentido=FALSE): livre;
+    
+    -- Carro entrou ou saiu com sucesso
+    (estado = livre): aguardando;
+
+    TRUE : estado;
+    esac;
+  
+  next(semaforo1) := 
+    case
+      (estado = entrando) & (vagas < 100) : TRUE;
+      estado = saindo : FALSE;
+      estado = aguardando: FALSE;
+      TRUE : semaforo1;
+    esac;
+
+  next(semaforo2) := 
+    case
+      estado = entrando : FALSE;
+      (estado = saindo) & (vagas >= 1): TRUE;
+      estado = aguardando: FALSE;
+      TRUE : semaforo2;
+    esac;
+
+  next(c1) :=
+    case
+      estado = entrando: TRUE;
+      estado = c1_aberta: FALSE;
+      estado = c2_fechada: TRUE;
+      estado = aguardando: FALSE;
+      TRUE: c1;
+    esac;
+
+  next(c2) :=
+    case
+      estado = saindo: TRUE;
+      estado = c1_fechada: TRUE;
+      estado = c2_aberta: FALSE;
+      estado = aguardando: FALSE;
+      TRUE: c2;
+    esac;
+
+  next(critico) :=
+    case
+      estado = entrando: TRUE;
+      estado = saindo: TRUE;
+      estado = aguardando: FALSE;
+      TRUE : critico;
+    esac;
+
+  next(sentido) :=
+    case
+      estado = entrando: TRUE;
+      estado = saindo: FALSE;
+      TRUE: sentido;
+    esac;
+
+  next(vagas) :=
+  case
+    (estado = livre) & (sentido=TRUE) & (vagas < 100) : vagas + 1;
+    (estado = livre) & (sentido=FALSE) & (vagas >= 1): vagas - 1;
+    TRUE: vagas;
+  esac;
+
+FAIRNESS
+  running
