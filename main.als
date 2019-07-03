@@ -84,6 +84,26 @@ pred Fatos {
 	all g1:Garagem | all g2:Garagem | !(g1 = g2) => #(g1.vagasVisitantes & g2.vagasVisitantes) = 0
 }
 
+-- ASSERTS
+assert TodoCondominioTemApenasUmPortao{
+	all c: Condominio | one c.portao 
+}
+check TodoCondominioTemApenasUmPortao for 30
+
+assert TodoCondominioTemApenasUmaGaragem{
+	all c: Condominio | one c.garagem 
+}
+check TodoCondominioTemApenasUmaGaragem  for 30
+
+assert TodoCondominioTemPeloMenosUmMorador{
+	all c: Condominio | some c.moradores
+}
+check TodoCondominioTemPeloMenosUmMorador  for 30
+
+assert Nome{
+	
+}
+
 
 
 pred show[]{}
