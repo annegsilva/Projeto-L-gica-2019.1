@@ -28,8 +28,13 @@ ASSIGN
   init(semaforo1) := FALSE;
   init(semaforo2) := FALSE;
   
-SPEC
-  AG (passagem.estado = aguardando -> AF passagem.critico = FALSE)
+SPEC(passagem.estado = aguardando -> passagem.critico = FALSE);
+SPEC(passagem.estado = entrando -> passagem.critico = TRUE);
+SPEC(passagem.estado = saindo -> passagem.critico = TRUE);
+INVARSPEC (semaforo1 = TRUE -> semaforo2 = FALSE);
+INVARSPEC (semaforo2 = TRUE -> semaforo1 = FALSE);
+INVARSPEC (passagem.estado = entrando -> passagem.sentido = TRUE)
+INVARSPEC (passagem.estado = saindo -> passagem.sentido = FALSE)
 
 -------------------------------------------------
 MODULE portaria(semaforo1, semaforo2)
