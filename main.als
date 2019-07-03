@@ -37,7 +37,7 @@ sig Autorizacao {
 	veiculo: one Veiculo
 }
 
-sig Garagem {
+one sig Garagem {
 	vagasMoradores: set Veiculo,
 	vagasVisitantes: set Veiculo
 }
@@ -52,7 +52,7 @@ fun GetGaragemVisitado[v:Visitante]: one Garagem {
 	GetCondominioMorador[v.visita].garagem
 }
 
-pred Fatos {
+fact Fatos {
 	all p:Portao | #portao.p = 1
 	all p:Portao | p.cancelaEntrada != p.cancelaSaida
 	all p:Portao | p.semaforoEntrada != p.semaforoSaida
@@ -88,23 +88,45 @@ pred Fatos {
 assert TodoCondominioTemApenasUmPortao{
 	all c: Condominio | one c.portao 
 }
-check TodoCondominioTemApenasUmPortao for 30
 
 assert TodoCondominioTemApenasUmaGaragem{
 	all c: Condominio | one c.garagem 
 }
-check TodoCondominioTemApenasUmaGaragem  for 30
+
 
 assert TodoCondominioTemPeloMenosUmMorador{
 	all c: Condominio | some c.moradores
 }
-check TodoCondominioTemPeloMenosUmMorador  for 30
 
-assert Nome{
-	
+assert MoradorDependenteTemUmMoradorTitular{
+	all md: MoradorDependente | one md.depende
+}
+
+assert CancelaEntradaDiferenteCancelaSaida{
+	all p: Portao | p.cancelaEntrada != p.cancelaSaida
+}
+
+assert SemaforoEntradaDiferenteSemaforoSaida{
+	all p: Portao | p.semaforoEntrada != p.semaforoSaida
+}
+
+assert VeiculoTemApenasUmProprietario{
+	all v: Veiculo | one v.proprietario
+}
+
+assert GaragemSoExisteNoCondominio{
+	all g: Garagem | #garagem.g = 1
+}
+
+assert VeiculoApenasEmUmaGaragem{
+	all g1: Garagem | all g2: Garagem | all v: Veiculo | v in g1 => !(v in g2)
+}
+
+assert VeiculoEhDeVisitanteOuMorador{
+	all v: Veiculo | v in Garagem.vagasMoradores => !(v in  Garagem.vagasVisitantes)
 }
 
 
 
-pred show[]{}
-run Fatos for 30
+check GaragemSoExisteNoCondominio for 30
+run show{}
