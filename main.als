@@ -65,6 +65,7 @@ fact Fatos {
 	all m:Morador | #moradores.m = 1
     all m:Morador | #proprietario.m <= 2
 	all m:MoradorDependente | GetCondominioMorador[m] = GetCondominioMorador[m.depende]
+	all m:Morador | proprietario.m in Garagem.vagasMoradores
 
 	all c:Cancela | c in Portao.cancelaEntrada or c in Portao.cancelaSaida
 	all s:Semaforo | s in Portao.semaforoEntrada or s in Portao.semaforoSaida
@@ -93,7 +94,6 @@ assert TodoCondominioTemApenasUmaGaragem{
 	all c: Condominio | one c.garagem 
 }
 
-
 assert TodoCondominioTemPeloMenosUmMorador{
 	all c: Condominio | some c.moradores
 }
@@ -102,8 +102,19 @@ assert MoradorDependenteTemUmMoradorTitular{
 	all md: MoradorDependente | one md.depende
 }
 
+assert TodoMoradorTaEmUmCondominio {
+	all m:Morador | #moradores.m = 1
+}
+
 assert CancelaEntradaDiferenteCancelaSaida{
 	all p: Portao | p.cancelaEntrada != p.cancelaSaida
+}
+
+assert TodaCancelaTaEmUmPortao {
+	all c:Cancela | c in Portao.cancelaEntrada or c in Portao.cancelaSaida
+}
+assert TodoSemaforoTaEmUmPortao {
+	all s:Semaforo | s in Portao.semaforoEntrada or s in Portao.semaforoSaida
 }
 
 assert SemaforoEntradaDiferenteSemaforoSaida{
@@ -118,11 +129,26 @@ assert GaragemSoExisteNoCondominio{
 	all g: Garagem | #garagem.g = 1
 }
 
-
 assert VeiculoEhDeVisitanteOuMorador{
 	all v: Veiculo | v in Garagem.vagasMoradores => !(v in  Garagem.vagasVisitantes)
 }
 
+assert VeiculosDeMoradoresTemAutorizacao {
+	all v:Veiculo | v.proprietario in Condominio.moradores => (#veiculo.v = 1)
+}
 
-check VeiculoEhDeVisitanteOuMorador for 30
+assert VeiculosDeVisitanteNaoTemAutorizacao {
+	all v:Veiculo | !(v.proprietario in Condominio.moradores) => (#veiculo.v = 0)
+}
+
+assert VeiculoSoEmUmaGaragem {
+	all g1:Garagem | all g2:Garagem | !(g1 = g2) => #(g1.vagasMoradores & g2.vagasMoradores) = 0
+	all g1:Garagem | all g2:Garagem | !(g1 = g2) => #(g1.vagasVisitantes & g2.vagasVisitantes) = 0
+}
+
+assert VeiculoNaoEhVisitanteEDeMorador {
+	all g1:Garagem | all g2:Garagem | !(g1 = g2) => #(g1.vagasMoradores & g2.vagasVisitantes) = 0
+}
+
+check TodoSemaforoTaEmUmPortao for 30
 run show{}
