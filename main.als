@@ -118,15 +118,11 @@ assert GaragemSoExisteNoCondominio{
 	all g: Garagem | #garagem.g = 1
 }
 
-assert VeiculoApenasEmUmaGaragem{
-	all g1: Garagem | all g2: Garagem | all v: Veiculo | v in g1 => !(v in g2)
-}
 
 assert VeiculoEhDeVisitanteOuMorador{
 	all v: Veiculo | v in Garagem.vagasMoradores => !(v in  Garagem.vagasVisitantes)
 }
 
 
-
-check GaragemSoExisteNoCondominio for 30
+check VeiculoEhDeVisitanteOuMorador for 30
 run show{}
