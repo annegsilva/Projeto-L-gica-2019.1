@@ -28,6 +28,8 @@
 -- vagas: indica o número de carros estacionados na garagem
 
 ---------------------------------------------------------------
+-- link para gráfico da FSM implementada:
+-- https://drive.google.com/file/d/1uqUW7nBLYoWa15kP_ZEKHjlgHp_6p8Kj/view?usp=sharing
 
 MODULE main
 
